@@ -276,7 +276,7 @@ function Course() {
     for(var i = 0; i < this.trackPieces.length; i++) {
     //for(var trackPiece of this.trackPieces) {
       if(this.trackPieces[i].onPiece(position,5)) {
-        score = this.trackPieces[i].score;
+        score = this.trackPieces[i].getScore(position);
       }
     }
     return score;
@@ -306,6 +306,11 @@ function TrackPiece(pos, angle, dimensions, score) {
     } else {
       return false;
     }
+  }
+
+  this.getScore = function(position) {
+    var relativePosition = position.copy().sub(this.pos).rotate(-1*this.angle);
+    return this.score + ((dimensions.x + relativePosition.x)/dimensions.x);
   }
 }
 
