@@ -190,7 +190,6 @@ function Car(dna) {
       }
     }
     this.currentHealth--;
-    console.log(this.currentHealth);
   }
   
   this.show = function() {
