@@ -2,7 +2,6 @@ var population;
 var course;
 var iteration = 0;
 var iterationP;
-var deathClock = 51000;
 
 function setup() {
   iterationP = createP();
@@ -21,11 +20,10 @@ function draw() {
   camera(leaderCar.pos.x - width/2,leaderCar.pos.y - height/2,0.5);
   course.show();
   population.run();
-  if(population.completion() > 0.9 || (deathClock-- <= 0)) {
+  if(population.completion() > 0.9) {
     population.evaluate();
     population.selection();
     iterationP.html("Iteration " + ++iteration);
-    deathClock = 1000;
   }
   
 }
@@ -116,6 +114,11 @@ function Car(dna) {
   this.acc = createVector();
   this.angacc = 0;
   this.sensors = [];
+  this.currentTrackId = 0;
+  this.maxHealth = 200;
+  this.currentHealth = 200;
+  this.highestTrackId = 0;
+
   if(dna) {
     this.dna = dna;
   } else {
@@ -127,6 +130,18 @@ function Car(dna) {
   this.updateFitness = function() {
     this.fitness = course.getScore(this.pos);
     return this.fitness;
+  }
+
+  this.onNewTrackId = function() {
+    if(this.currentTrackId > this.highestTrackId) {
+      this.highestTrackId = this.currentTrackId;
+      this.currentHealth = this.maxHealth;
+    }
+  }
+
+  this.updateTrackId = function() {
+    this.currentTrackId = course.getTrackId(this.pos);
+    this.onNewTrackId();
   }
   
   this.update = function() {
@@ -154,8 +169,10 @@ function Car(dna) {
       this.acc.y += inputs.acc*sin(this.angle);
       this.angacc += inputs.angacc*0.1;
     }
+
+    this.updateTrackId();
     
-    if(!course.onCourse(this.pos)) {
+    if(!course.onCourse(this.pos) || this.currentHealth <= 0) {
       this.isCrashed = true;
       this.acc = createVector();
       this.vel = createVector();
@@ -172,6 +189,8 @@ function Car(dna) {
         this.angle += TWO_PI;
       }
     }
+    this.currentHealth--;
+    console.log(this.currentHealth);
   }
   
   this.show = function() {
@@ -254,6 +273,17 @@ function Course() {
     }
   }
   
+  this.getTrackId = function(pos) {
+    var trackId = 0;
+    for(var i = 0; i < this.trackPieces.length; i++) {
+    //for(var trackPiece of this.trackPieces) {
+      if(this.trackPieces[i].onPiece(pos,5)) {
+        trackId = i;
+      }
+    }
+    return trackId;
+  }
+
   this.show = function() {
     for(var trackPiece of this.trackPieces) {
       trackPiece.show();
